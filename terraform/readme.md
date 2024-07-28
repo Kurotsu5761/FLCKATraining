@@ -4,10 +4,10 @@ This project aims to setup/destroy VMs on Azure that will be used for Foundation
 ## Run terraform with .env file
 
 ### Initialization with .env file
-docker run --env-file ./.env --rm -it -v ${PWD}:/workspace -w /workspace zenika/terraform-azure-cli:latest init
+docker run --env-file ./.env --rm -it -v ${PWD}:/workspace -w /workspace hashicorp/terraform:latest init
 
 ### Plan the configuration files
-docker run --env-file ./.env --rm -it -v ${PWD}:/workspace -w /workspace zenika/terraform-azure-cli:latest plan -out tf.plan
+docker run --env-file ./.env --rm -it -v ${PWD}:/workspace -w /workspace zenika/terraform-azure-cli:latest terraform plan -out tf.plan
 
 ### Apply the configuration files
 docker run --env-file ./.env --rm -it -v ${PWD}:/workspace -w /workspace zenika/terraform-azure-cli:latest terraform apply
