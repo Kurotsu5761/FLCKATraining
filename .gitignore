@@ -1,3 +1,8 @@
 /*/.env
+
+#Terraform
 /terraform/.terraform
+/terraform/tf.plan
+
+#Ansible
 /ansible/id_rsa.pem
