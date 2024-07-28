@@ -3,6 +3,8 @@
 #Terraform
 /terraform/.terraform
 /terraform/tf.plan
+/terraform/terraform.tfstate
+/terraform/terraform.tfstate.backup
 
 #Ansible
 /ansible/id_rsa.pem
