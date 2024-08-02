@@ -8,4 +8,4 @@
 
 #Ansible
 /ansible/id_rsa.pem
-/ansible/host
+/ansible/host.ini
