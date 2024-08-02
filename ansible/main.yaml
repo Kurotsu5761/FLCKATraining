@@ -34,12 +34,10 @@
       community.general.modprobe:
         name: overlay
         state: present
-        persistent: present
     - name: "Add br_netfilter module"
       community.general.modprobe:
         name: br_netfilter
         state: present
-        persistent: present
     # - name: "Load modules"
     #   ansible.builtin.shell: |
     #     modprobe overlay
@@ -99,6 +97,7 @@
       - name: "Install kube related clis"
         ansible.builtin.apt:
           update_cache: true
+          allow_downgrade: true
           name: 
             - kubeadm=1.29.1-1.1
             - kubelet=1.29.1-1.1
@@ -106,9 +105,9 @@
       # - name: hold kubeadm
       #   ansible.builtin.dpkg_selections:
       #     name: 
-      #       - kubeadm
-      #       - kubelet
-      #       - kubectl
+      #       - kubeadm=1.29.1-1.1
+      #       - kubelet=1.29.1-1.1
+      #       - kubectl=1.29.1-1.1
       #     selection: hold
   - name: "Configure Kubernetes Control Panel"
     become: true 
@@ -131,7 +130,35 @@
           src: /home/kurox/LFS458/SOLUTIONS/s_03/kubeadm-config.yaml
           dest: /root/
           owner: root
-      - name: ""
       - name: "Initialize kubeadm"
         ansible.builtin.shell: |
           kubeadm init --config=kubeadm-config.yaml --upload-certs | tee kubeadm-init.out
+      - name: "Wait for configuration to finish"
+        ansible.builtin.pause:
+          minutes: 5
+  - name: "Create .kube directory"
+    ansible.builtin.file:
+      path: $HOME/.kube
+      state: directory
+      owner: kurox
+  - name: "Copy Configuration"
+    become: true
+    ansible.builtin.copy:
+      remote_src: true
+      src: /etc/kubernetes/admin.conf
+      dest: /home/kurox/.kube/config
+      owner: kurox
+  - name: "Install python3"
+    become: true
+    apt:
+      name: python3-pip
+  - name: "Setup python k8s"
+    pip:
+      name: kubernetes
+      executable: pip3
+  - name: "Setup CNI"
+    kubernetes.core.k8s:
+      state: present
+      src: /home/kurox/LFS458/SOLUTIONS/s_03/cilium-cni.yaml
+
+
