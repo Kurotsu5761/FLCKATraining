@@ -20,3 +20,26 @@
           - kubeadm=1.29.1-1.1
           - kubelet=1.29.1-1.1
           - kubectl=1.29.1-1.1
+    - name: "Preparing the machine in networking"
+      become: true
+      block:
+      - name: "Swapoff"
+        shell:
+          swapoff -a
+      - name: "Add overlay module"
+        community.general.modprobe:
+          name: overlay
+          state: present
+      - name: "Add br_netfilter module"
+        community.general.modprobe:
+          name: br_netfilter
+          state: present
+      - name: "Update kernel network"
+        ansible.builtin.shell: | 
+          cat << EOF | tee /etc/sysctl.d/kubernetes.conf 
+          net.bridge.bridge-nf-call-ip6tables = 1
+          net.bridge.bridge-nf-call-iptables = 1
+          net.ipv4.ip_forward = 1
+          EOF
+      - name: "Check changes"
+        command: sysctl --system

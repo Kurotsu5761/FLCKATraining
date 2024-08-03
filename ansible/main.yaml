@@ -5,40 +5,20 @@
     - setup_docker
     - setup_k8s
   tasks:
-  - name: "Preparing the machine in networking"
-    become: true
-    block:
-    - name: "Add overlay module"
-      community.general.modprobe:
-        name: overlay
-        state: present
-    - name: "Add br_netfilter module"
-      community.general.modprobe:
-        name: br_netfilter
-        state: present
-    - name: "Update kernel network"
-      ansible.builtin.shell: | 
-        cat << EOF | tee /etc/sysctl.d/kubernetes.conf 
-        net.bridge.bridge-nf-call-ip6tables = 1
-        net.bridge.bridge-nf-call-iptables = 1
-        net.ipv4.ip_forward = 1
-        EOF
-    - name: "Check changes"
-      command: sysctl --system
   - name: "Configure Kubernetes Control Panel"
     become: true
     block:
       - name: "Get host ip"
         ansible.builtin.shell: |
           hostname -i
-        register: cp
+        register: cp_ip
       - name: "Display ip"
         debug:
-          msg: "{{ cp.stdout }}"
+          msg: "{{ cp_ip.stdout }}"
       - name: "Update /etc/hosts"
         ansible.builtin.lineinfile:
           path: /etc/hosts
-          line: "{{ cp.stdout }} k8scp"
+          line: "{{ cp_ip.stdout }} k8scp"
           state: present
       - name: "Copy configuration file from user"
         ansible.builtin.copy:
@@ -71,20 +51,43 @@
   - name: "Setup CNI"
     kubernetes.core.k8s:
       state: present
-      src: /home/kurox/LFS458/SOLUTIONS/s_03/cilium-cni.yaml
+      src: https://github.com/weaveworks/weave/releases/download/v2.8.1/weave-daemonset-k8s.yaml
   - name: "Get Join command"
     become: true
     shell:
       kubeadm token create --print-join-command
     register: join_command
+  - name: "Add dummy host for variable passing"
+    add_host:
+      name: "k8s_cp"
+      join_command: "{{ join_command }}"
+      cp_ip: "{{ cp_ip }}"
 
 - hosts: workers
+  vars:
+    join_command: "{{hostvars.k8s_cp.join_command.stdout}}"
+    cp_ip: "{{hostvars.k8s_cp.cp_ip.stdout}}"
   roles:
     - dependencies
     - setup_docker
     - setup_k8s
   tasks:
-    - name: "Print join_command"
-      debug:
-        msg: "{{join_command.stdout }}"
-
+    # - name: "Print join_command"
+    #   debug:
+    #     msg: "{{hostvars.k8s_cp.join_command.stdout}}"
+    #   when: hostvars.k8s_cp.join_command is defined
+    - name: "Update /etc/hosts"
+      become: true
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        line: "{{ cp_ip }} k8scp"
+        state: present
+    - name: "Check if kubelet installed"
+      stat: 
+        path: /etc/kubernetes/kubelet.conf
+      register: kubelet_conf
+    - name: "Join k8s cluster"
+      become: true
+      shell:
+        "{{join_command}}"
+      when: kubelet_conf.stat.exists == False

@@ -10,6 +10,6 @@ output "main_pip" {
   value = module.virtualMachines.main_pip
 }
 
-output "secondary_pip" {
-  value = module.virtualMachines.secondary_pip
-}
+# output "secondary_pip" {
+#   value = module.virtualMachines.secondary_pip
+# }
