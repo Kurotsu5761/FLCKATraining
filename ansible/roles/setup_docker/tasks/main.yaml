@@ -1,0 +1,29 @@
+- name: "Getting Docker"
+  become: true
+  block:
+    - name: "Create directory"
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+    - name: "Check if docker.gpg exist"
+      stat: path=/etc/apt/keyrings/docker.gpg
+      register: dockergpg
+    - name: "Get apt key"
+      ansible.builtin.shell: |
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+      when: dockergpg.stat.exists == False
+    - name: "Update apt cache"
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu jammy stable"
+        state: present 
+- name: "Install containerd"
+  become: true
+  block:
+    - name: "Insall containerd"
+      ansible.builtin.apt:
+        name: containerd.io
+    - name: "Configure containerd"
+      shell: |
+        containerd config default | tee /etc/containerd/config.toml
+        sed -e 's/SystemdCgroup = false/SystemdCgroup = true/g' -i /etc/containerd/config.toml
+        systemctl restart containerd

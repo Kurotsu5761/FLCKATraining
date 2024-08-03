@@ -1,0 +1,24 @@
+- name: "Update and download packages/dependencies"
+  become: true
+  block:
+  - name: "Update and download package"
+    apt:
+      upgrade: yes
+      update_cache: yes
+  - name: "Installing dependencies"
+    apt:
+      name: 
+      - vim
+      - curl
+      - apt-transport-https
+      - git
+      - wget
+      - software-properties-common
+      - lsb-release 
+      - ca-certificates
+      - python3-pip
+      state: present
+  - name: "Setup python k8s"
+    pip:
+      name: kubernetes
+      executable: pip3

@@ -1,0 +1,22 @@
+- name: "Getting Kubernetes Modules"
+  become: true
+  block:
+    - name: "Check if kubernetes-apt-keyring.gpg exist"
+      stat: path=/etc/apt/keyrings/kubernetes-apt-keyring.gpg
+      register: k8sgpg
+    - name: "Get apt key"
+      ansible.builtin.shell: |
+        curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+      when: k8sgpg.stat.exists == False
+    - name: "Update apt cache"
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /"
+        state: present 
+    - name: "Install kube related clis"
+      ansible.builtin.apt:
+        update_cache: true
+        allow_downgrade: true
+        name: 
+          - kubeadm=1.29.1-1.1
+          - kubelet=1.29.1-1.1
+          - kubectl=1.29.1-1.1

@@ -1,0 +1,8 @@
+- name: "Check file downloaded"
+  stat: path=/home/kurox/LFS258_V2024-07-03_SOLUTIONS.tar.xz
+  register: trainingpkg
+- name: "Download and extract training package"
+  shell: |
+    wget https://cm.lf.training/LFS258/LFS258_V2024-07-03_SOLUTIONS.tar.xz --user=LFtraining --password=Penguin2014
+    tar -xvf LFS258_V2024-07-03_SOLUTIONS.tar.xz
+  when: trainingpkg.stat.exists == False
