@@ -19,6 +19,10 @@ ARM_TENANT_ID=
 ARM_SUBSCRIPTION_ID=
 
 ## Commands
+### Allow Password ssh
+**This is unsafe, but I'm just gonna safe time**
+export ANSIBLE_HOST_KEY_CHECKING=False
+
 ### Initialization with .env file
 docker run --env-file ./.env --rm -it -v ${PWD}:/workspace -w /workspace hashicorp/terraform:latest init
 
@@ -26,7 +30,7 @@ docker run --env-file ./.env --rm -it -v ${PWD}:/workspace -w /workspace hashico
 docker run --env-file ./.env --rm -it -v ${PWD}:/workspace -w /workspace zenika/terraform-azure-cli:latest terraform plan -out tf.plan
 
 ### Apply the configuration files
-docker run --env-file ./.env --rm -it -v ${PWD}:/workspace -w /workspace zenika/terraform-azure-cli:latest terraform apply
+docker run --env-file ./.env --rm -it -v ${PWD}:/workspace -w /workspace zenika/terraform-azure-cli:latest terraform apply tf.plan
 
 ### Destroy all the components
 docker run --env-file ./.env --rm -it -v ${PWD}:/workspace -w /workspace zenika/terraform-azure-cli:latest terraform destroy -auto-approve

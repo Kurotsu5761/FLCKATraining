@@ -31,14 +31,14 @@
       - name: "Get host ip"
         ansible.builtin.shell: |
           hostname -i
-        register: hostname_ip
+        register: cp
       - name: "Display ip"
         debug:
-          msg: "{{ hostname_ip.stdout }}"
+          msg: "{{ cp.stdout }}"
       - name: "Update /etc/hosts"
         ansible.builtin.lineinfile:
           path: /etc/hosts
-          line: "{{ hostname_ip.stdout }} k8scp"
+          line: "{{ cp.stdout }} k8scp"
           state: present
       - name: "Copy configuration file from user"
         ansible.builtin.copy:
@@ -46,14 +46,16 @@
           src: /home/kurox/LFS458/SOLUTIONS/s_03/kubeadm-config.yaml
           dest: /root/
           owner: root
+      - name: "Check if k8s already exist"
+        stat:
+          path: /etc/kubernetes/admin.conf
+        register: k8s_admin
       - name: "Initialize kubeadm"
         shell:
           kubeadm init --config kubeadm-config.yaml --upload-certs | tee kubeadm-init.out
         args:
           chdir: /root
-      - name: Sleep for 2 minutes
-        wait_for:
-          timeout: 120
+        when: k8s_admin.stat.exists == False
   - name: "Create .kube directory"
     ansible.builtin.file:
       path: $HOME/.kube
@@ -70,5 +72,19 @@
     kubernetes.core.k8s:
       state: present
       src: /home/kurox/LFS458/SOLUTIONS/s_03/cilium-cni.yaml
+  - name: "Get Join command"
+    become: true
+    shell:
+      kubeadm token create --print-join-command
+    register: join_command
 
+- hosts: workers
+  roles:
+    - dependencies
+    - setup_docker
+    - setup_k8s
+  tasks:
+    - name: "Print join_command"
+      debug:
+        msg: "{{join_command.stdout }}"
 

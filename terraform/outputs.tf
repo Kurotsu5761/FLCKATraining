@@ -5,3 +5,11 @@ output "resource_group_name" {
 output "cp_pip" {
   value = module.virtualMachines.cp_pip
 }
+
+output "main_pip" {
+  value = module.virtualMachines.main_pip
+}
+
+output "secondary_pip" {
+  value = module.virtualMachines.secondary_pip
+}
